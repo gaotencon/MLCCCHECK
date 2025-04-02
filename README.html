@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三星MLCC料號規格推測工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        input, button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            font-size: 1rem;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>三星MLCC料號規格推測工具</h1>
+        <p>輸入三星MLCC料號（例如：CL10B104KC8VPNC）以推測規格。</p>
+        <input type="text" id="partNumber" placeholder="輸入料號">
+        <button onclick="decodePartNumber()">推測規格</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        function decodePartNumber() {
+            const partNumber = document.getElementById('partNumber').value.trim().toUpperCase();
+            const resultDiv = document.getElementById('result');
+
+            if (!partNumber.startsWith('CL')) {
+                resultDiv.textContent = '無效的料號，請確認輸入是否正確！';
+                return;
+            }
+
+            // 定義尺寸編碼（第3、4碼）
+            const sizeMap = {
+                '10': '0603（1608）',
+                '21': '0805（2012）',
+                '31': '1206（3216）',
+                '32': '1210（3225）',
+                '42': '1808（4520）',
+                '43': '1812（4532）',
+                '55': '2220（5750）'
+            };
+
+            // 定義材質編碼（第5碼）
+            const materialMap = {
+                'A': 'X5R（-55~+85°C）',
+                'B': 'X7R（-55~+125°C）',
+                'C': 'C0G（-55~+125°C）',
+                'X': 'X8R（-55~+150°C）',
+                'S': 'X7S（-55~+125°C）'
+            };
+
+            // 定義容量解析（第6~8碼）
+            function parseCapacity(code) {
+                const base = parseInt(code.slice(0, 2)); // 前兩位是有效數字
+                const multiplier = Math.pow(10, parseInt(code[2])); // 第三位表示10的次方
+                const capacityInPf = base * multiplier;
+
+                // 自動轉換單位
+                if (capacityInPf >= 1_000_000) {
+                    return `${capacityInPf / 1_000_000} µF`;
+                } else if (capacityInPf >= 1_000) {
+                    return `${capacityInPf / 1_000} nF`;
+                } else {
+                    return `${capacityInPf} pF`;
+                }
+            }
+
+            // 定義誤差編碼（第9碼）
+            const toleranceMap = {
+                'J': '±5%',
+                'K': '±10%',
+                'M': '±20%',
+                'B': '±0.1pF'
+            };
+
+            // 定義電壓編碼（第10碼）
+            const voltageMap = {
+                'C': '16V',
+                'D': '25V',
+                'E': '35V',
+                'F': '50V',
+                'G': '100V',
+                'H': '250V'
+            };
+
+            const size = sizeMap[partNumber.slice(2, 4)] || '未知尺寸';
+            const material = materialMap[partNumber[4]] || '未知材質';
+            const capacity = parseCapacity(partNumber.slice(5, 8)) || '未知容量';
+            const tolerance = toleranceMap[partNumber[8]] || '未知誤差';
+            const voltage = voltageMap[partNumber[9]] || '未知電壓';
+
+            // 顯示結果
+            resultDiv.innerHTML = `
+                <p><strong>尺寸：</strong>${size}</p>
+                <p><strong>材質：</strong>${material}</p>
+                <p><strong>容量：</strong>${capacity}</p>
+                <p><strong>誤差：</strong>${tolerance}</p>
+                <p><strong>電壓：</strong>${voltage}</p>
+            `;
+        }
+    </script>
+</body>
+</html>
